@@ -153,3 +153,37 @@ Our profiles, as well as our strategies are created, the PowerShell script that 
 
 Scroll down the list, select the profile and choose the desired mode.
 
+# Troubleshooting
+
+# Define the location of profiles
+```powershell
+
+28  # Remote location containing profiles.
+29  $Remote_Location_WDAC = "C:\Share\WDAC\Profiles\"
+
+```
+
+## Add or delete a rule manually
+
+After having correctly associated the notion of Audit mode and Applied mode, it can sometimes happen that you simply want to authorize, block or delete a rule manually.
+
+To do this, launch one of the .XML configuration files with a text editor.
+In our example, we use the applied configuration file of the domain controller. We go to the end of the <FileRules> tag.
+```xml
+<FileRules>
+     <Allow ID="ID_ALLOW_A_66A_0_0" FriendlyName="C:\Windows\regedit.exe" Hash= "cfc71e8a61c2c8e5f20281cd958a8c56a569d133d9781f130ea2a6382bbe507e" />
+     <Allow ID="ID_ALLOW_A_66B_0_0" FriendlyName="C:\Windows\write.exe" Hash= "dbf47fb194796a8343cfbbf9ed44beaa87cd3a49a36c5c5ff1bd14d9e96cb2a4" />
+     
+We will add a rule allowing "WMIC", we increment the ID from the previous one. The ID is customizable, but logically, we increment from the previous one.
+    <Allow ID="ID_DENY_A_66C_0_0" FriendlyName="wmic.exe" FileName="wmic.exe" MinimumFileVersion="0.0.0.0" MaximumFileVersion="65355.65355.65355.65355" />
+</FileRules>
+
+We report the mention at the end of the code to the <FileRulesRef> tag. It is used to load the previously written lines of code.
+<FileRulesRef>
+    <FileRuleRef RuleID="ID_ALLOW_A_66A_0_0" />
+    <FileRuleRef RuleID="ID_ALLOW_A_66B_0_0" />    
+    <FileRuleRef RuleID="ID_ALLOW_A_66C_0_0" />
+</FileRulesRef>
+
+Launch the WDAC GUI, put the workstation back in Audit mode and then Enforced in the same instance without having to reboot the machine between the two mode updates.
+```
