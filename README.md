@@ -20,6 +20,21 @@ The following are Microsoft's recommended methods for deploying policies to PCs:
 - By using a script
 - By using a group policy
 
+# How it works
+
+```mermaid
+sequenceDiagram
+    participant User PC
+    participant GUI WDAC
+    User PC->>GUI WDAC : Call the script.
+    GUI WDAC->>User PC: Show the GUI.
+    User PC->>GUI WDAC : Choose its parameters
+    GUI WDAC-->>File Server : Request a copy of the desired configuration .bin file
+    File Server-->>GUI WDAC : Sends the copied configuration file to the clipboard
+    GUI WDAC->>User PC : Paste the file into the destination directory
+    Note left of GUI WDAC: $env:windir+"\System32\CodeIntegrity\CIPolicies\Active\"
+    GUI WDAC->>User PC : Run RefreshPolicy.exe to activate and refresh all WDAC policies on the managed endpoint.
+```
 ## Design and management cycle of a strategy
 
 In order to carry out this activity successfully, we rely on the Microsoft guide:
@@ -43,22 +58,6 @@ Once we have a suitable strategy, we change the mode of the strategy to "Applied
 
 <img width="576" alt="image" src="https://user-images.githubusercontent.com/115532735/204152849-4a58e8ba-dbc4-4b4f-9510-6a670f78ba1d.png">
 
-How it works
-
-```mermaid
-sequenceDiagram
-    participant User PC
-    participant GUI WDAC
-    User PC->>GUI WDAC : Call the script.
-    GUI WDAC->>User PC: Show the GUI.
-    User PC->>GUI WDAC : Choose its parameters
-    GUI WDAC-->>File Server : Request a copy of the desired configuration .bin file
-    File Server-->>GUI WDAC : Sends the copied configuration file to the clipboard
-    GUI WDAC->>User PC : Paste the file into the destination directory
-    Note left of GUI WDAC: $env:windir+"\System32\CodeIntegrity\CIPolicies\Active\"
-    GUI WDAC->>User PC : Run RefreshPolicy.exe to activate and refresh all WDAC policies on the managed endpoint.
-```
-
 ## WDAC Policy Wizard
 
 "WDAC Policy Wizard" is a utility developed by Microsoft that provides a graphical interface and allows system administrators to create application control policies ready for deployment.
@@ -75,27 +74,82 @@ An important element to take into account in order to avoid using additional com
 However, this .XML file cannot be deployed, regardless of the method.
 
 To do this, go to "Settings" and check the box "Convert policy to binary after xml creation".
-<img width="735" alt="image" src="https://user-images.githubusercontent.com/115532735/204153071-893d0803-a363-4108-9340-c6464753507d.png">
+![image](https://user-images.githubusercontent.com/115532735/204159824-09b4be91-d456-4fdf-8c60-55385fc8e232.png)
 
 ### Creation of a strategy
 
 Return to the home page, click on "Policy Creator" to create a new policy.
-<img width="677" alt="image" src="https://user-images.githubusercontent.com/115532735/204153121-1c954d6b-9d6b-4c25-b105-6150c8349705.png">
+![image](https://user-images.githubusercontent.com/115532735/204159884-3323f885-b25e-4292-a96f-0da39861f62b.png)
 
 ### Type of policy
 
 Select the type of policy, in our case, we select the policy in Single Policy Format.
 It is compatible with GPO deployment and works on all Windows 10, Windows Server 2016 and 2019.
-<img width="706" alt="image" src="https://user-images.githubusercontent.com/115532735/204153159-55819c5b-7131-4d97-a869-05b7049169d3.png">
+![image](https://user-images.githubusercontent.com/115532735/204159969-32ce5c99-d936-4b9c-8a87-6b735cd3e94e.png)
 
 ### Strategy Model
 
 Each of the policy models has a unique set of rules and a different circle of trust.
 
-In our case, we select the "Default Windows Mode" model, which is the strictest model, it has the smallest circle of trust and therefore increased security.
+In our case, we select the **"Default Windows Mode"** model, which is the strictest model, it has the smallest circle of trust and therefore increased security.
 
 However, it involves some background work of analysis and maintenance of the policy in order to adjust the circle to the proper functioning of the system.
-Fill in the "Policy Name" field, in our case we name the policy ==XXXX_WDAC_Policy==.
+Fill in the "Policy Name" field, in our case we name the policy **XXXX_WDAC_Policy**.
 
-Select the location of the policy via the field " Policy File Location ", in a dedicated directory, for exemple ==C:\Share\WDAC\==.
+Select the location of the policy via the field " Policy File Location ", in a dedicated directory, for exemple **C:\Share\WDAC**.
+![image](https://user-images.githubusercontent.com/115532735/204160038-1b95ee1e-8d91-4d86-a42a-5e30e947dc50.png)
+
+Policy rules are automatically enabled/disabled according to the chosen template.
+We customize our rules according to our needs. 
+The description of all options is summarized in the table below. To access all the options, click on "Advanced Options".
+![image](https://user-images.githubusercontent.com/115532735/204161628-96187dda-3229-4806-bd98-016dd247bd1a.png)
+
+Define specific (complementary) rules for application identification. This identification can be done by:
+- Editor name;
+- Access path to the application's executable file or folder; Ø File attributes ;
+- Name of the application ;
+- File hash.
+
+![image](https://user-images.githubusercontent.com/115532735/204161745-744f6334-b2d0-4d21-aa8c-21172396b90e.png)
+
+# Deployment of the WDAC strategy
+
+We have already seen how to create a WDAC policy. The WDAC Policy Wizard utility allows you to create them graphically, but its function stops here.
+
+To do this, you need to understand who WDAC is for. In any infrastructure, there are servers running Windows Server xxxx and desktops running Windows xx.
+
+Each server is unique and has its own software.
+
+It is therefore not possible to use a single strategy for all servers.
+
+We dissociate these servers in "Profile".
+We proceed to the creation of these profiles in our shared folder on the file server at the following address: **"\\\XXXXX\Share$\WDAC\"**
+
+```
+WDAC Root Directory in File Server
+│   Script_GUI_WDAC.ps1  
+│
+└───Profiles
+│   │
+│   └───SNMP_Server
+│   │   │   WDAC_Enforce.bin
+│   │   │   WDAC_Enforce.xml
+│   │   │   WDAC_Audit.bin
+│   │   │   WDAC_Audit.xml
+│   │
+│   └───AD_Server
+│       │   WDAC_Enforce.bin
+│       │   WDAC_Enforce.xml
+│       │   WDAC_Audit.bin
+│       │   WDAC_Audit.xml
+...
+```
+- The .XML file allows you to read and write these policies in order to adjust the settings. 
+- The .BIN file allows you to deploy the policy on the computer so that Windows can apply it.
+
+### GUI Interface
+
+Our profiles, as well as our strategies are created, the PowerShell script that I created allows to modify the state of WDAC on the computer by using a GUI.
+
+Scroll down the list, select the profile and choose the desired mode.
 
