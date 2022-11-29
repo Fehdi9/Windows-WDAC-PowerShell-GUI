@@ -155,7 +155,7 @@ Scroll down the list, select the profile and choose the desired mode.
 
 # Troubleshooting
 
-# Define the location of profiles
+## Define the location of profiles
 ```powershell
 
 28  # Remote location containing profiles.
