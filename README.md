@@ -167,7 +167,7 @@ Scroll down the list, select the profile and choose the desired mode.
 
 ## Define the location of Code Integrity folder 
 ```powershell
-$BIN_Destination      = $env:windir+"\System32\CodeIntegrity\CIPolicies\Active\"
+35  $BIN_Destination      = $env:windir+"\System32\CodeIntegrity\CIPolicies\Active\"
 ```
 
 ## Add or delete a rule manually
