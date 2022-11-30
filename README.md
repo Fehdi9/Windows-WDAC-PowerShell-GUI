@@ -157,10 +157,17 @@ Scroll down the list, select the profile and choose the desired mode.
 
 ## Define the location of profiles
 ```powershell
-
-28  # Remote location containing profiles.
 29  $Remote_Location_WDAC = "C:\Share\WDAC\Profiles\"
+```
 
+## Define the location location containing RefreshPolicyTool.exe
+```powershell
+32  $RefreshPolicyTool    = "C:\Share\WDAC\RefreshPolicyTool.exe"
+```
+
+## Define the location of Code Integrity folder 
+```powershell
+$BIN_Destination      = $env:windir+"\System32\CodeIntegrity\CIPolicies\Active\"
 ```
 
 ## Add or delete a rule manually
