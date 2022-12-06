@@ -221,11 +221,11 @@ Function Enforce_Policy {
     ConvertFrom-CIPolicy $Enforce_XML $Enforce_BIN
 
     Write-Host "Copying the binary file (.BIN) to its Windows application location." -ForegroundColor Green
-    Copy-Item -Path $Enforce_BIN -Destination $DestinationBinary
+    Copy-Item -Path $Enforce_BIN -Destination $BIN_Destination
 
     Write-Host "Updating the current WDAC policy." -ForegroundColor Green
-    Invoke-CimMethod -Namespace root/Microsoft/Windows/CI -ClassName PS_UpdateAndCompareCIPolicy -MethodName Update -Arguments @{FilePath = $DestinationBinary}
-    
+    &RefreshPolicyTool
+
     Write-Warning "The operation was successful, please reboot the PC to apply the new policy."  
 
     End_Process  
@@ -267,12 +267,12 @@ Function Audit_policy {
     Write-Host "Convert audit rule (.XML) to binary (.BIN)". -ForegroundColor Green
     ConvertFrom-CIPolicy $Audit_XML $Audit_BIN
 
-    Write-Host "Copy the binary file (.BIN) to its Windows application location". -ForegroundColor Green
-    Copy-Item -Path $Audit_BIN -Destination $DestinationBinary
+    Write-Host "Copying the binary file (.BIN) to its Windows application location." -ForegroundColor Green
+    Copy-Item -Path $Audit_BIN -Destination $BIN_Destination
 
-    Write-Host "Update current WDAC policy. -ForegroundColor Green"
-    Invoke-CimMethod -Namespace root/Microsoft/Windows/CI -ClassName PS_UpdateAndCompareCIPolicy -MethodName Update -Arguments @{FilePath = $DestinationBinary}
-	
+    Write-Host "Updating the current WDAC policy." -ForegroundColor Green
+    &RefreshPolicyTool	
+
     End_Process
 }
 
