@@ -1,4 +1,3 @@
-
 <#
 .SYNOPSIS
   Script providing a GUI to drive the native security utility WDAC (Windows Defender Application Control).
@@ -37,18 +36,12 @@ $ScriptVersion        = "1"
 $Remote_Location_WDAC = "C:\Share\WDAC\Profiles\"
 
 # Define the location location containing RefreshPolicyTool.exe
-$RefreshPolicyTool    = "C:\Share\WDAC\RefreshPolicyTool.exe"
+$RefreshPolicyTool    = "C:\Share\WDAC\RefreshPolicy.exe"
 
 # Define the location of Code Integrity folder
 $BIN_Destination      = $env:windir+"\System32\CodeIntegrity\CIPolicies\Active\"
 
-# $Define the location of policies for each profile
-$Audit_XML            = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit.xml"
-$Audit_temp           = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit_Temp.xml"
-$Audit_BIN            = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit.bin"
 
-$Enforce_XML          = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Enforce.xml"
-$Enforce_BIN          = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Enforce.bin"
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -98,32 +91,32 @@ Function GUI {
 
     # Creating the window.
     $Form_WDAC                           = New-Object system.Windows.Forms.Form
-    $Form_WDAC.ClientSize                = '600,350'
+    $Form_WDAC.ClientSize                = '1000,700'
     $Form_WDAC.text                      = "WDAC Configuration"
     $Form_WDAC.BackColor                 = "#ffffff"
 
     # Add a title 
     $Title                               = New-Object system.Windows.Forms.Label
-    $Title.location                      = New-Object System.Drawing.Point(20,5)
+    $Title.location                      = New-Object System.Drawing.Point(20,100)
     $Title.text                          = "Utility to change the state of WDAC on the machine" 
-    $Title.Font                          = 'Century Ghotic,11'
+    $Title.Font                          = 'Roboto,11'
     $Title.AutoSize                      = $true
     $Title.width                         = 25
     $Title.height                        = 10
 
     # Add some details
     $Description                         = New-Object system.Windows.Forms.Label
-    $Description.location                = New-Object System.Drawing.Point(20,50)
+    $Description.location                = New-Object System.Drawing.Point(20,150)
     $Description.text                    = "If you need help or submit an issue please go to GitHub.com/Fehdi9"
-    $Description.Font                    = 'Century Ghotic,11'
+    $Description.Font                    = 'Roboto,11'
     $Description.AutoSize                = $true
     $Description.width                   = 400
     $Description.height                  = 40
 
     # List of profiles
     $Drop_down_list_title                = New-Object system.Windows.Forms.Label
-    $Drop_down_list_title.location       = New-Object System.Drawing.Point(20,120)
-    $Drop_down_list_title.Font           = 'Century Ghotic,11'
+    $Drop_down_list_title.location       = New-Object System.Drawing.Point(25,250)
+    $Drop_down_list_title.Font           = 'Roboto,11'
     $Drop_down_list_title.text           = "Please select a policy profile to apply to the machine."
     $Drop_down_list_title.AutoSize       = $true
     $Drop_down_list_title.width          = 25
@@ -131,11 +124,11 @@ Function GUI {
 
     # Empty box containing the profiles
     $Drop_down_list                      = New-Object system.Windows.Forms.ComboBox
-    $Drop_down_list.location             = New-Object System.Drawing.Point(25,150)
+    $Drop_down_list.location             = New-Object System.Drawing.Point(25,300)
     $Drop_down_list.text                 = ""
-    $Drop_down_list.Font                 = 'Century Ghotic,15'
+    $Drop_down_list.Font                 = 'Roboto,25'
     $Drop_down_list.width                = 350
-    $Drop_down_list.autosize             = $true
+    $Drop_down_list.height               = 100
 
     # Dynamic list at the path defined in the declarations containing all profiles 
     $Dynamic_Profile_List = Get-ChildItem -Path $Remote_Location_WDAC
@@ -147,22 +140,22 @@ Function GUI {
 
     # Left button which action "enforced" mode
     $Left_button                         = New-Object system.Windows.Forms.Button
-    $Left_button.location                = New-Object System.Drawing.Point(35,200)
-    $Left_button.Font                    = 'Century Ghotic,10'
+    $Left_button.location                = New-Object System.Drawing.Point(200,400)
+    $Left_button.Font                    = 'Roboto,11'
     $Left_button.text                    = "Enforced mode"
-    $Left_button.width                   = 150
-    $Left_button.height                  = 50
+    $Left_button.width                   = 250
+    $Left_button.height                  = 100
     $Left_button.BackColor               = "#ffffff"
     $Left_button.ForeColor               = "#000"
     $Left_button.DialogResult            = [System.Windows.Forms.DialogResult]::Yes
 
     # Right button which action "Audit" mode
     $Right_button                        = New-Object system.Windows.Forms.Button
-    $Right_button.location               = New-Object System.Drawing.Point(200,200)
+    $Right_button.location               = New-Object System.Drawing.Point(550,400)
     $Right_button.text                   = "Audit mode"
-    $Right_button.Font                   = 'Century Ghotic,10'
-    $Right_button.width                  = 150
-    $Right_button.height                 = 50
+    $Right_button.Font                   = 'Roboto,11'
+    $Right_button.width                  = 250
+    $Right_button.height                 = 100
     $Right_button.BackColor              = "#ffffff"
     $Right_button.ForeColor              = "#000"
     $Right_button.DialogResult           = [System.Windows.Forms.DialogResult]::OK
@@ -181,6 +174,14 @@ Function GUI {
 Function Enforce_Policy { 
    
     $Selected_profile = $Drop_down_list.SelectedItem
+
+    # $Define the location of policies for each profile
+    $Audit_XML            = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit.xml"
+    $Audit_temp           = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit_Temp.xml"
+    $Audit_BIN            = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit.bin"
+
+    $Enforce_XML          = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Enforce.xml"
+    $Enforce_BIN          = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Enforce.bin"
 
     <# 
     # Troubleshoot
@@ -235,6 +236,14 @@ Function Enforce_Policy {
 Function Audit_policy {
 
     $Selected_Profile                             = $Drop_down_list.SelectedItem
+    
+    # $Define the location of policies for each profile
+    $Audit_XML            = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit.xml"
+    $Audit_temp           = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit_Temp.xml"
+    $Audit_BIN            = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit.bin"
+
+    $Enforce_XML          = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Enforce.xml"
+    $Enforce_BIN          = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Enforce.bin"
 
     <#
     # Troubleshoot
@@ -282,12 +291,10 @@ function End_Process {
     switch ($End) {
 
         "OK" {
-            Stop-Logs 
             Restart-Computer
         } 
 
         "Cancel" {
-            Stop-Logs 
         } 
     }
 }
@@ -303,16 +310,15 @@ function Main {
     If (-Not (Connection-Is-Working)) {
     
         Message_Box -Title "Error - Network" -Message "The path containing the profiles is unreachable." -Button "OK" -Icon "IconErreur"
-   	Exit 
+        Exit 
     }    
 
     Else {
 
-        Start-Logs
-	Start-Transcript -Path $Log_Path -NoClobber
-	$StopWatch = New-Object System.Diagnostics.Stopwatch
-	$StopWatch.Start()
-	Write-Output "Start script - version $($ScriptVersion)"
+        Start-Transcript -Path $Log_Path -NoClobber
+        $StopWatch = New-Object System.Diagnostics.Stopwatch
+        $StopWatch.Start()
+        Write-Output "Start script - version $($ScriptVersion)"
 
         GUI
     }
@@ -325,5 +331,6 @@ Write-Output $StopWatch.Elapsed
 $StopWatch.Stop()
 Write-Output "Finished script - $($MyInvocation.MyCommand.Name)"
 Stop-Transcript
+
 
 
