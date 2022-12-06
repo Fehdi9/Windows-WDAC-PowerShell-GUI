@@ -218,10 +218,10 @@ Function Enforce_Policy {
     Set-RuleOption -FilePath $Enforce_XML -Option 3 -Delete
 
     Write-Host "Converting the strategy (.XML) to binary (.BIN)." -ForegroundColor Green
-    ConvertFrom-CIPolicy $Enforce_XML $Audit_BIN
+    ConvertFrom-CIPolicy $Enforce_XML $Enforce_BIN
 
     Write-Host "Copying the binary file (.BIN) to its Windows application location." -ForegroundColor Green
-    Copy-Item -Path $Audit_BIN -Destination $DestinationBinary
+    Copy-Item -Path $Enforce_BIN -Destination $DestinationBinary
 
     Write-Host "Updating the current WDAC policy." -ForegroundColor Green
     Invoke-CimMethod -Namespace root/Microsoft/Windows/CI -ClassName PS_UpdateAndCompareCIPolicy -MethodName Update -Arguments @{FilePath = $DestinationBinary}
@@ -237,8 +237,7 @@ Function Audit_policy {
     $Selected_Profile                             = $Drop_down_list.SelectedItem
 
     <#
-    #Bloc de debug des chemins utilisées
-
+    # Troubleshoot
     Write-Host $Remote_Location_WDAC
     Write-Host $Enforce_XML
     Write-Host $Audit_XML
@@ -297,12 +296,10 @@ function Connection-Is-Working {
 
     Return (Test-Path $Remote_Location_WDAC)
 }
-
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 function Main { 
 
-    # Vérification de la connexion au serveur distant contenant les profiles.
     If (-Not (Connection-Is-Working)) {
     
         Message_Box -Title "Error - Network" -Message "The path containing the profiles is unreachable." -Button "OK" -Icon "IconErreur"
