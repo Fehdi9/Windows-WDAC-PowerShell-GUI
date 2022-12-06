@@ -30,7 +30,7 @@ $ErrorActionPreference = "Stop"
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $LogNumber            = Get-Date -UFormat "%Y-%m-%d@%H-%M-%S"
-$Log                  = "$($env:TEMP)\$($MyInvocation.MyCommand.Name) $($LogNumber).log"
+$Log_Path             = "$($env:TEMP)\$($MyInvocation.MyCommand.Name) $($LogNumber).log"
 $ScriptVersion        = "1"
 
 # Define the location of profiles
@@ -196,58 +196,40 @@ Function Enforce_Policy {
     Test-Path $Audit_BIN
     #>
 
-    # Si le profil selectionné ne contient aucune stratégie, le script s'arrête et affiche une message box d'erreur.
-    Foreach ($Path in @($Audit_XML, $Enforce_XML)) {
+    # If the selected profile does not contain any strategy, the script stops and displays an error box.
+    Foreach ($Path in @($Audit_XML, $Audit_BIN, $Enforce_XML)) {
     
         If (-Not (Test-Path $Path)) {
-    
-            #
-            Message_Box -Title "Erreur 02 - Stratégie manquante" -Message "La stratégie présente au chemin $Path est introuvable." -Button "OK" -Icon "IconErreur"
-
-            #
+            Message_Box -Title "Erreur - Policies missing" -Message "The path $Path cannot be found. This path corresponds to a necessary strategy" -Button "OK" -Icon "IconErreur"
             Return $False
         }
     }
 
-    Write-Host "Création d'une stratégie d'audit temporaire basé sur l'usage utilisateur." -ForegroundColor Green
+    Write-Host "Creating a temporary auditing strategy based on user usage." -ForegroundColor Green
     New-CIPolicy -audit -Level Hash -FilePath $Audit_temp -UserPEs
 
-    Write-Host "Mutualisation de la stratégie existante avec la temporairement créé." -ForegroundColor Green
+    Write-Host "Mutualization of the existing policy with the temporarily created one." -ForegroundColor Green
     Merge-CIPolicy -PolicyPaths $Audit_XML, $Audit_temp -OutputFilePath $Enforce_XML
 
-    Write-Host "Suppression de la stratégie temporaire." -ForegroundColor Green
+    Write-Host "Deleting the temporary policy." -ForegroundColor Green
     Remove-Item -Path $Audit_temp -Force -Confirm:$false
- 
-    Write-Host "Suppression de l’option (3) - Mode audit." -ForegroundColor Green
+
+    Write-Host "Removing option (3) - Audit mode." -ForegroundColor Green
     Set-RuleOption -FilePath $Enforce_XML -Option 3 -Delete
- 
-    Write-Host "Conversion de la stratégie (.XML) en binaire (.BIN)." -ForegroundColor Green
+
+    Write-Host "Converting the strategy (.XML) to binary (.BIN)." -ForegroundColor Green
     ConvertFrom-CIPolicy $Enforce_XML $Audit_BIN
-  
-    Write-Host "Copie du fichier binaire (.BIN) vers son emplacement d'application Windows." -ForegroundColor Green
-    Copy-Item -Path $Audit_BIN -Destination $DestinationBinaire
 
-    Write-Host "Mise à jour de la stratégie WDAC actuelle." -ForegroundColor Green
-    Invoke-CimMethod -Namespace root/Microsoft/Windows/CI -ClassName PS_UpdateAndCompareCIPolicy -MethodName Update -Arguments @{FilePath = $DestinationBinaire}
+    Write-Host "Copying the binary file (.BIN) to its Windows application location." -ForegroundColor Green
+    Copy-Item -Path $Audit_BIN -Destination $DestinationBinary
+
+    Write-Host "Updating the current WDAC policy." -ForegroundColor Green
+    Invoke-CimMethod -Namespace root/Microsoft/Windows/CI -ClassName PS_UpdateAndCompareCIPolicy -MethodName Update -Arguments @{FilePath = $DestinationBinary}
     
+    Write-Warning "The operation was successful, please reboot the PC to apply the new policy."  
 
-    Write-Warning "L'opération s'est correctement déroulée, veuillez redémarrer le PC afin d'appliquer la nouvelle stratégie."
-
-    $End = Message_Box -Title "End of process" -Message "You need to restart the computer. Would you like to do it now ?" -Button "OkCancel" -Icon "IconAvertissement"
-
-    switch ($End) {
-
-        "OK" {
-            Stop-Logs
-            Restart-Computer
-        }
-
-        "Cancel" {
-            Stop-Logs
-        }
-    }
+    End_Process  
 }
-
 
 #<------------------------- Fonction - Définir la stratégie WDAC en mode 'Audit'     ------------------------->#
 Function Audit_policy {
@@ -277,23 +259,25 @@ Function Audit_policy {
         }
     }
     
-    Write-Host "Duplicate current rules 'Applied' strategy." -ForegroundColor Green
+    Write-Host "Duplicates the current rules for the 'Applied' strategy." -ForegroundColor Green
     cp $Enforce_XML $Audit_XML -Force -Confirm:$false
 
-    Write-Host "Adding option '3' (Audit mode)." -ForegroundColor Green
+    Write-Host "Added option '3' (Audit mode)." -ForegroundColor Green
     Set-RuleOption -FilePath $Audit_XML -Option 3
 
-    Write-Host "Converting the Audit (.XML) policy to binary (.BIN)." -ForegroundColor Green
+    Write-Host "Convert audit rule (.XML) to binary (.BIN)". -ForegroundColor Green
     ConvertFrom-CIPolicy $Audit_XML $Audit_BIN
 
-    Write-Host "Copying the binary (.BIN) file to its Windows application location." -ForegroundColor Green
+    Write-Host "Copy the binary file (.BIN) to its Windows application location". -ForegroundColor Green
     Copy-Item -Path $Audit_BIN -Destination $DestinationBinary
 
-    Write-Host "Updating the current WDAC policy." -ForegroundColor Green
+    Write-Host "Update current WDAC policy. -ForegroundColor Green"
     Invoke-CimMethod -Namespace root/Microsoft/Windows/CI -ClassName PS_UpdateAndCompareCIPolicy -MethodName Update -Arguments @{FilePath = $DestinationBinary}
+	
+    End_Process
+}
 
-    Write-Warning "The operation was successful, please reboot the PC to apply the new policy."
-
+function End_Process {
     $End = Message_Box -Title "End of process" -Message "You need to restart the computer. Would you like to do it now ?" -Button "OkCancel" -Icon "IconAvertissement"
 
     switch ($End) {
@@ -309,89 +293,35 @@ Function Audit_policy {
     }
 }
 
-
-#<------------------------- Fonction - Vérification des privilèges administrateurs     ------------------------->#
-function Is-Administrator {
-
-    # Vérification que le script est bien lancé avec des privilèges administrateurs.
-    # Un utilisateur sans privilèges administrateurs ne pourra pas exécuter le script.
-
-    ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
-
-}
-
-
-#<------------------------- Fonction - Début de la transcription de l'activité     ------------------------->#
-function Start-Logs {
-
-    ###
-    # Variables
-    ###
-
-    # Récupération de la date et l'heure actuel.
-    $Transcription_Date = Get-Date -Format "dddd_dd_MM_yyyy_HH_mm"
-
-    Start-Transcript -Path "C:\Log_GPO\WDAC\Log_Script_$Transcription_Date.txt" 
-
-}
-
-#<------------------------- Fonction - Fin de la transcription de l'activité     ------------------------->#
-function Stop-Logs {
-
-    Stop-Transcript
-}
-
-#<------------------------- Fonction - Vérification de connexion au serveur distant     ------------------------->#
 function Connection-Is-Working {
 
-    # Emplacement défini plus haut dans les constantes.
     Return (Test-Path $Remote_Location_WDAC)
 }
 
-#<------------------------- Fonction - Fin de la transcription de l'activité - Si erreur    ------------------------->#
-function Quit-Program {
+#-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-    Exit    
-}
-
-#<------------------------- Fonction - Main     ------------------------->#
-function Main {
-   
-    # Vérification des privilèges administrateurs.
-    If (-Not (Is-Administrator)){
-    
-        Message_Box -Title "Erreur 03 - Privilèges" -Message "Vous ne disposez pas des privilèges suffisant afin d'exécuter le script." -Button "OK" -Icon "IconErreur"
-
-        # Si les privilèges administrateurs ne sont pas utilisés, le programme se termine.
-        Quit-Program
-    }
+function Main { 
 
     # Vérification de la connexion au serveur distant contenant les profiles.
     If (-Not (Connection-Is-Working)) {
     
-        Message_Box -Title "Erreur 01 - Réseau SRV" -Message "La connexion au serveur distant n'a pas pu s'effectuer. Veuillez contacter votre administrateur réseau." -Button "OK" -Icon "IconErreur"
-    
-        # Si le serveur n'a pas pu être contacté, le programme se termine.
-        Quit-Program
+        Message_Box -Title "Error - Network" -Message "The path containing the profiles is unreachable." -Button "OK" -Icon "IconErreur"
+   	Exit 
     }    
 
     Else {
 
-        # Début de la transcription de l'activité.
         Start-Logs
+	Start-Transcript -Path $Log_Path -NoClobber
+	$StopWatch = New-Object System.Diagnostics.Stopwatch
+	$StopWatch.Start()
+	Write-Output "Start script - version $($ScriptVersion)"
 
-        # Lancement de l'interface IHM.
-        Forme_GUI
+        GUI
     }
 }
+
 Main
-
-#-----------------------------------------------------------[Execution]------------------------------------------------------------
-
-Start-Transcript -Path $Log -NoClobber
-$StopWatch = New-Object System.Diagnostics.Stopwatch
-$StopWatch.Start()
-Write-Output "Start script - version $($ScriptVersion)"
 
 #-----------------------------------------------------------[Finish up]------------------------------------------------------------
 Write-Output $StopWatch.Elapsed
