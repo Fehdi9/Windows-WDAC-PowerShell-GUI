@@ -57,29 +57,29 @@ Function Message_Box {
     )
 
     $Button_Codes = @{
-        "OK" = 0; 
-        "OKCancel" = 1; 
-        "AbortRetryIgnore" = 2; 
-        "YesNoCancel" = 3; 
-        "YesNo" = 4; 
+        "OK" = 0;
+        "OKCancel" = 1;
+        "AbortRetryIgnore" = 2;
+        "YesNoCancel" = 3;
+        "YesNo" = 4;
         "RetryCancel" = 5
     }
-    
+
     $Icon_Codes = @{
-        "IconErreur" = 16; 
-        "IconQuestion" = 32; 
-        "IconAvertissement" = 48; 
+        "IconErreur" = 16;
+        "IconQuestion" = 32;
+        "IconAvertissement" = 48;
         "IconInformation" = 64
     }
 
     # Load the Windows.Forms library of graphical objects
     [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
-    
+
     # Display the dialog box and return the return value (button pressed)
     $Reponse = [System.Windows.Forms.MessageBox]::Show($Message, $Title , $Button_Codes[$Button], $Icon_Codes[$Icon])
     Return $Reponse
 
-    ## Sources : 
+    ## Sources :
     # https://cnf1g.com/afficher-un-messagebox-en-powershell/
     # https://ss64.com/ps/messagebox.html
 }
@@ -92,13 +92,13 @@ Function GUI {
     # Creating the window.
     $Form_WDAC                           = New-Object system.Windows.Forms.Form
     $Form_WDAC.ClientSize                = '1000,700'
-    $Form_WDAC.text                      = "WDAC Configuration"
+    $Form_WDAC.text                      = "WDAC Configuration Tool"
     $Form_WDAC.BackColor                 = "#ffffff"
 
-    # Add a title 
+    # Add a title
     $Title                               = New-Object system.Windows.Forms.Label
     $Title.location                      = New-Object System.Drawing.Point(20,100)
-    $Title.text                          = "Utility to change the state of WDAC on the machine" 
+    $Title.text                          = "Utility to change the state of WDAC on the machine"
     $Title.Font                          = 'Roboto,11'
     $Title.AutoSize                      = $true
     $Title.width                         = 25
@@ -130,7 +130,7 @@ Function GUI {
     $Drop_down_list.width                = 350
     $Drop_down_list.height               = 100
 
-    # Dynamic list at the path defined in the declarations containing all profiles 
+    # Dynamic list at the path defined in the declarations containing all profiles
     $Dynamic_Profile_List = Get-ChildItem -Path $Remote_Location_WDAC
 
     Foreach ($profile in $Dynamic_Profile_List){
@@ -171,8 +171,8 @@ Function GUI {
     [void]$Form_WDAC.ShowDialog()
 }
 
-Function Enforce_Policy { 
-   
+Function Enforce_Policy {
+
     $Selected_profile = $Drop_down_list.SelectedItem
 
     # $Define the location of policies for each profile
@@ -183,14 +183,14 @@ Function Enforce_Policy {
     $Enforce_XML          = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Enforce.xml"
     $Enforce_BIN          = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Enforce.bin"
 
-    <# 
+    <#
     # Troubleshoot
- 
+
     Write-Host $Emplacement_Strategie
     Write-Host $Audit_XML
     Write-Host $Enforce_XML
     Write-Host $Audit_BIN
-  
+
     Test-Path $Emplacement_Strategie
     Test-Path $Audit_XML
     Test-Path $Enforce_
@@ -199,7 +199,7 @@ Function Enforce_Policy {
 
     # If the selected profile does not contain any strategy, the script stops and displays an error box.
     Foreach ($Path in @($Audit_XML, $Audit_BIN, $Enforce_XML)) {
-    
+
         If (-Not (Test-Path $Path)) {
             Message_Box -Title "Erreur - Policies missing" -Message "The path $Path cannot be found. This path corresponds to a necessary strategy" -Button "OK" -Icon "IconErreur"
             Return $False
@@ -227,16 +227,16 @@ Function Enforce_Policy {
     Write-Host "Updating the current WDAC policy." -ForegroundColor Green
     &RefreshPolicyTool
 
-    Write-Warning "The operation was successful, please reboot the PC to apply the new policy."  
+    Write-Warning "The operation was successful, please reboot the PC to apply the new policy."
 
-    End_Process  
+    End_Process
 }
 
 #<------------------------- Fonction - Définir la stratégie WDAC en mode 'Audit'     ------------------------->#
 Function Audit_policy {
 
     $Selected_Profile                             = $Drop_down_list.SelectedItem
-    
+
     # $Define the location of policies for each profile
     $Audit_XML            = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit.xml"
     $Audit_temp           = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit_Temp.xml"
@@ -251,7 +251,7 @@ Function Audit_policy {
     Write-Host $Enforce_XML
     Write-Host $Audit_XML
     Write-Host $Audit_BIN
-    
+
     Test-Path $Remote_Location_WDAC
     Test-Path $Enforce_XML
     Test-Path $Audit_XML
@@ -260,13 +260,13 @@ Function Audit_policy {
 
     # If the selected profile does not contain any strategy, the script stops and displays an error box.
     Foreach ($Path in @($Audit_XML, $Audit_BIN, $Enforce_XML)) {
-    
+
         If (-Not (Test-Path $Path)) {
             Message_Box -Title "Erreur - Policies missing" -Message "The path $Path cannot be found. This path corresponds to a necessary strategy" -Button "OK" -Icon "IconErreur"
             Return $False
         }
     }
-    
+
     Write-Host "Duplicates the current rules for the 'Applied' strategy." -ForegroundColor Green
     cp $Enforce_XML $Audit_XML -Force -Confirm:$false
 
@@ -280,7 +280,7 @@ Function Audit_policy {
     Copy-Item -Path $Audit_BIN -Destination $BIN_Destination
 
     Write-Host "Updating the current WDAC policy." -ForegroundColor Green
-    &RefreshPolicyTool	
+    &RefreshPolicyTool
 
     End_Process
 }
@@ -292,10 +292,10 @@ function End_Process {
 
         "OK" {
             Restart-Computer
-        } 
+        }
 
         "Cancel" {
-        } 
+        }
     }
 }
 
@@ -305,13 +305,13 @@ function Connection-Is-Working {
 }
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-function Main { 
+function Main {
 
     If (-Not (Connection-Is-Working)) {
-    
+
         Message_Box -Title "Error - Network" -Message "The path containing the profiles is unreachable." -Button "OK" -Icon "IconErreur"
-        Exit 
-    }    
+        Exit
+    }
 
     Else {
 
@@ -331,6 +331,4 @@ Write-Output $StopWatch.Elapsed
 $StopWatch.Stop()
 Write-Output "Finished script - $($MyInvocation.MyCommand.Name)"
 Stop-Transcript
-
-
 
