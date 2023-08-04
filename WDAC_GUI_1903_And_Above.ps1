@@ -186,14 +186,14 @@ Function Enforce_Policy {
     <#
     # Troubleshoot
 
-    Write-Host $Emplacement_Strategie
+    Write-Host $Remote_Location_WDAC
     Write-Host $Audit_XML
     Write-Host $Enforce_XML
     Write-Host $Audit_BIN
 
-    Test-Path $Emplacement_Strategie
+    Test-Path $Remote_Location_WDAC
     Test-Path $Audit_XML
-    Test-Path $Enforce_
+    Test-Path $Enforce_XML
     Test-Path $Audit_BIN
     #>
 
@@ -239,7 +239,6 @@ Function Audit_policy {
 
     # $Define the location of policies for each profile
     $Audit_XML            = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit.xml"
-    $Audit_temp           = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit_Temp.xml"
     $Audit_BIN            = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Audit.bin"
 
     $Enforce_XML          = $Remote_Location_WDAC + $Selected_Profile + "\WDAC_Enforce.xml"
